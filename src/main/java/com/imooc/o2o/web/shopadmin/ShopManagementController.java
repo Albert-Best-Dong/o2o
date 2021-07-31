@@ -71,11 +71,7 @@ public class ShopManagementController {
     @ResponseBody
     private Map<String, Object> getShopList(HttpServletRequest request) {
         Map<String, Object> modelMap = new HashMap<String, Object>();
-        PersonInfo user = new PersonInfo();
-        user.setUserId(1L);
-        user.setName("test");
-        request.getSession().setAttribute("user", user);
-        user = (PersonInfo) request.getSession().getAttribute("user");
+        PersonInfo user = (PersonInfo) request.getSession().getAttribute("user");
 
         try {
             Shop shopCondition = new Shop();
@@ -83,6 +79,8 @@ public class ShopManagementController {
 
             ShopExecution se = shopService.getShopList(shopCondition, 0, 100);
             modelMap.put("shopList", se.getShopList());
+            //列出店铺成功之后，将店铺放入session中作为权限验证依据，即该账号只能操作它自己的店铺
+            request.getSession().setAttribute("shopList", se.getShopList());
             modelMap.put("user", user);
             modelMap.put("success", true);
         } catch (Exception e) {
@@ -194,6 +192,7 @@ public class ShopManagementController {
                 if (se.getState() == ShopStateEnum.CHECK.getState()) {
                     modelMap.put("success", true);
                     //该用户可以操作的店铺列表
+                    @SuppressWarnings("unchecked")
                     List<Shop> shopList = (List<Shop>) request.getSession().getAttribute("shopList");
                     if (shopList == null || shopList.size() == 0) {
                         shopList = new ArrayList<Shop>();
